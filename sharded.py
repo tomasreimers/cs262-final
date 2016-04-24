@@ -45,10 +45,12 @@ import json
 from flask import Flask
 import thread
 import time
+import requests
 
 STATE_READY = 1
 STATE_RUNNING = 2
 STATE_COMPLETE = 3
+STATE_DEAD = 4
 
 STATE_STRINGS = {
     STATE_READY: "State ready",
@@ -71,7 +73,11 @@ class Nexus(object):
         new_worker = RemoteWorker(self, addr, password)
         self._workers.append(new_worker)
 
+    def load_work(self, computation):
+        self._queued_runnables.append(computation)
+
     def unload_work(self):
+        # TODO: needs a lot of error handling. No worker? No job to run?
         for worker in self._workers:
             if worker._state == STATE_READY:
                 self.assign_work_to(worker)
@@ -95,8 +101,9 @@ class RemoteWorker(object):
         self._nexus = nexus
 
         #
-        # TODO set up self.ping to run every few seconds in a different thread
+        # Set up self.ping to run every few seconds in a different thread
         #
+        thread.start_new_thread(self.ping, ())
 
     def assign_work(self, computation):
         self._state = STATE_RUNNING
@@ -106,23 +113,57 @@ class RemoteWorker(object):
         # TODO : Actually transmit to the remote worker instance
         #
 
+        try:
+            res = requests.get(self._addr + "computation", timeout=0.5)
+        except requests.exceptions.ConnectionError as e:
+            # Encountered issue connecting to worker, log error message and
+            # invalidate this worker
+            print e
+            self._state = STATE_DEAD
+            return 1
+
     def ping(self):
+        while True:
 
-            #
-            # TODO : Ping the server every few seconds for status, the server sends back
-            #        STATE_READY, STATE_RUNNING, STATE_COMPLETE -- should it be complete,
-            #        it should also send back the returned and switch its own state to ready.
-            #        When this returns STATE_READY or STATE_COMPLETE it should tell the
-            #        nexus to assign it more work. The pings will need to happen in a
-            #        separate thread -- consider setting up a thread pool for all the
-            #        RemoteWorker objects on the nexus.
-            #
-            #        (https://docs.python.org/2/library/multiprocessing.html)
-            #
-            #        P.s. also consider thread safety
-            #
+            try:
+                # Hard coded to ping every 3 seconds
+                # TODO: not sure if timeout = 0.1 makes sense
+                res = requests.get(self._addr + "heartbeat", timeout=0.5)
 
-            pass
+            except requests.exceptions.ConnectionError as e:
+                # Encountered issue connecting to worker, log error message,
+                # kill heartbeat thread and invalidate this worker
+                print e
+                self._state = STATE_DEAD
+                return 1
+
+            # If worker is ready or running, heartbeat is okay
+            if res.text == STATE_STRINGS[STATE_READY] or res.text == STATE_STRINGS[STATE_RUNNING]:
+                print "heartbeat alive"
+                pass
+            else:
+                # Othersiew, the worker should be retuning a result from computatoin.
+                # Try to deserialize data
+                # TODO: Definately needs error handling here.
+                returned = Returned.unserialize(res.text)
+                self._running.done(returned)
+            time.sleep(1)
+
+        #
+        # TODO : Ping the server every few seconds for status, the server sends back
+        #        STATE_READY, STATE_RUNNING, STATE_COMPLETE -- should it be complete,
+        #        it should also send back the returned and switch its own state to ready.
+        #        When this returns STATE_READY or STATE_COMPLETE it should tell the
+        #        nexus to assign it more work. The pings will need to happen in a
+        #        separate thread -- consider setting up a thread pool for all the
+        #        RemoteWorker objects on the nexus.
+        #
+        #        (https://docs.python.org/2/library/multiprocessing.html)
+        #
+        #        P.s. also consider thread safety
+        #
+
+        pass
 
 class Worker(object):
     """The remote server, this accepts work from a nexus and runs it."""
@@ -156,11 +197,14 @@ class Worker(object):
             # Might be helpful to add STATE_RETURNED.
             #
             if self.state == STATE_COMPLETE:
+                print "Return result"
                 return self.result
             else:
+                print "Heartbeat at " + STATE_STRINGS[self.state]
                 return STATE_STRINGS[self.state]
 
         elif action == "computation":
+            print "Incoming job"
             # Initial computation request. Only accept when worker is free.
             if (self.state == STATE_RUNNING):
                 return "Worker busy"
@@ -192,8 +236,10 @@ class Worker(object):
         time.sleep(10)
 
         # Syncing state is probably sufficient
-        self.result = "Dummy result"
+        dummy_result = Returned(value="Dummy result")
+        self.result = dummy_result.serialize()
         self.state = STATE_COMPLETE
+        print "Job complete"
 
     def start(self):
         self.state = STATE_READY
@@ -202,6 +248,7 @@ class Worker(object):
         # NOTE: May or may not be necessary to set threaded = True, since the request
         # handler could just be a single thread
         #
+        print "Worker starts"
         self.app.run(threaded = True)
 
         #
@@ -281,7 +328,7 @@ class Runnable(object):
         return cls(f_code=unserialized['f_code'])
 
 
-class Retured(object):
+class Returned(object):
     """A serializable of work that ran."""
 
     def __init__(self, is_exception=False, value=None):
@@ -299,5 +346,5 @@ class Retured(object):
 
     @classmethod
     def unserialize(cls, value):
-        unserialized = json.parse(unserialized_values)
+        unserialized = json.loads(value)
         return cls(is_exception=unserialized['is_exception'], value=unserialized['value'])
