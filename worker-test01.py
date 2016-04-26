@@ -1,4 +1,5 @@
-import sharded
+import Nexus
+import Worker
 import unittest
 import requests
 import time
@@ -7,7 +8,7 @@ from multiprocessing import Process
 class TestWorkerStates(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        worker = sharded.Worker()
+        worker = Worker.Worker()
         p = Process(target=worker.start, args=())
         p.start()
 
