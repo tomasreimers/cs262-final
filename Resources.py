@@ -36,7 +36,7 @@ class Computation(object):
     def done(self, returned):
         self._returned = returned
         self._state = STATE_COMPLETE
-
+                        
         while (len(self._callbacks) > 0):
             f = self._callbacks.pop(0)
             f(returned)

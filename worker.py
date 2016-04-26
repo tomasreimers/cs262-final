@@ -86,6 +86,10 @@ class Worker(object):
         # Dummy job that takes 10 seconds
         time.sleep(10)
 
+        #
+        # TODO: Real job
+        # 
+
         # Syncing state is probably sufficient
         dummy_result = Resources.Returned(value="Dummy result")
         self.result = dummy_result.serialize()
