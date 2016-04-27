@@ -150,7 +150,7 @@ class RemoteWorker(object):
 
         # send a post request with the data
         try:
-            res = requests.post(self._addr + "computation", data=computation._runnable.serialize())
+            res = requests.get(self._addr + "computation", data=computation._runnable.serialize())
         except requests.exceptions.ConnectionError as e:
             # Encountered issue connecting to worker, log error message and
             # invalidate this worker

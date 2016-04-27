@@ -1,5 +1,6 @@
 import json
 from flask import Flask
+from flask import request
 import thread
 import time
 import requests
@@ -21,7 +22,7 @@ class Worker(object):
 
     def __init__(self):
         self.app = Flask(__name__)
-        self.app.add_url_rule('/<action>', view_func=self.heartbeat_handler, methods=["GET", "POST"])
+        self.app.add_url_rule('/<action>', view_func=self.heartbeat_handler, methods=["GET"])
 
         self.state = 0
         self.result = None
@@ -59,43 +60,40 @@ class Worker(object):
             # Initial computation request. Only accept when worker is free.
             if (self.state == STATE_RUNNING):
                 return "Worker busy"
+            # Dispatch a new thread with to do computation
             else:
-                #
-                # TODO : Extract runnable_string and actual function call from payload
-                #
-                print "HEREREERE1"
-                print request
-                print request.data
-                print "HERERERERE2"
-                runnable_string = ""
-
-                # Dispatch a new thread with do_computation
-                thread.start_new_thread(self.do_computation, (runnable_string, ))
+                print "About to start computation"
+                thread.start_new_thread(self.do_computation, (request.data, ))
                 return "Job starts running"
         else:
             return 'Unsupported action'
 
     """
-    Wrapper function to run actual computations
+    Function:
+        Wrapper function to run actual computations.
+    Args:
+        runnable_string (string) : data to be deserialized
+    Returns:
+       None
+
+    TODO: 
+        Unserialize runnable_string, create a Runnable instance and
+        execute in current thread. Also need to sync updates to self.state
+        and self.result
     """
     def do_computation(self, runnable_string):
-        #
-        # TODO : Unserialize runnable_string, create a Runnable instance and
-        # execute in current thread. Also need to sync updates to self.state
-        # and self.result
-        #
-
+        # deserialize data
         self.state = STATE_RUNNING
+        f_data = json.loads(runnable_string)
+        f_args = f_data["f_args"]
+        f_code = f_data["f_code"]
+        print "Got these f_args from the client: ", f_args
+        print "Got this f_code from the client: ", f_code
 
-        # Dummy job that takes 10 seconds
-        time.sleep(10)
+        # compute result
+        
 
-        #
-        # TODO: Real job
-        # THIS IS WHERE YOU DO THE ACTUAL FUNCTION CALL AND STORE THE RESULT
-        # 
-
-        # Syncing state is probably sufficient
+        # update state
         dummy_result = Resources.Returned(value="Dummy result")
         self.result = dummy_result.serialize()
         self.state = STATE_COMPLETE
