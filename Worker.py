@@ -66,7 +66,7 @@ class Worker(object):
                 runnable_string = ""
 
                 # Dispatch a new thread with do_computation
-                thread.start_new_thread(self.do_computation, (runnable_string))
+                thread.start_new_thread(self.do_computation, (runnable_string, ))
                 return "Job starts running"
         else:
             return 'Unsupported action'
