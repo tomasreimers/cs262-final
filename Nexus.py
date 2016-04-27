@@ -122,7 +122,7 @@ class RemoteWorker(object):
     #     Initialize a RemoteWorker object
     # Args:
     #     nexus (instance)  : nexus object this worker will "belong" to
-    #     addr  (string)    : IP address of the worker
+    #     addr  (string)    : web address of the worker
     #     password (string) : password for the worker
     # Returns:
     #    None

@@ -20,7 +20,7 @@ if __name__ == '__main__':
 	# create nexus, register worker, and send code to remote machine
 	nexus = Nexus.Nexus()
 	nexus.register_worker("http://localhost:5000/", "")
-	time.sleep(3)
+	time.sleep(10)
 
 	# send work to a remote machine
 	nexus.load_work(computation)
