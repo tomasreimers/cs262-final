@@ -68,6 +68,10 @@ class Worker(object):
         else:
             return 'Unsupported action'
 
+    def create_function_call(self, f_name, f_args):
+        f_call = f_name + "(" + ",".join(map(lambda x: str(x), f_args)) + ")"
+        return f_call
+
     """
     Function:
         Wrapper function to run actual computations.
@@ -87,11 +91,15 @@ class Worker(object):
         f_data = json.loads(runnable_string)
         f_args = f_data["f_args"]
         f_code = f_data["f_code"]
-        print "Got these f_args from the client: ", f_args
-        print "Got this f_code from the client: ", f_code
+        f_name = f_code.split("\n")[0].split(" ")[1].split("(")[0]
+        print "do_computation log | Got these f_args from the client: ", f_args
+        print "do_computation log | Got this f_code from the client: \n", f_code
+        print "do_computation log | Extracted this function name from f_code: ", f_name
 
         # compute result
-        
+        exec(f_code)
+        exec("f_result = " + self.create_function_call(f_name, f_args))
+        print "do_computation log | Computed result: ", f_result
 
         # update state
         dummy_result = Resources.Returned(value="Dummy result")
