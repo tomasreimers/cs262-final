@@ -12,6 +12,7 @@ time.sleep(3)
 
 test_runnable = Resources.Runnable("Dummy code")
 test_computation = Resources.Computation(test_runnable)
+# nexus does .then method, not the client
 test_computation.then(print_result)
 
 nexus.load_work(test_computation)

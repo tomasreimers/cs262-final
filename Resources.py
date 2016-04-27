@@ -22,17 +22,35 @@ class Computation(object):
     """
 
     def __init__(self, runnable):
+        """
+        Function:
+            Initailizes a Computation object
+
+        """
         self._runnable = runnable
         self._returned = None
         self._state = STATE_READY
         self._callbacks = []
 
+    # this is executed by the nexus
+    # Function:
+    #     Execute / prepare execution of a callback on the result of a computation
+    # Args:
+    #     callback (function) : function to be executed on the result of a computation
+    # Returns:
+    #    None
     def then(self, callback):
         if (self._state == STATE_COMPLETE):
             callback(self._returned)
         else:
             self._callbacks.append(callback)
 
+    # Function:
+    #     Execute / prepare execution of a callback on the result of a computation
+    # Args:
+    #     callback (function) : function to be executed on the result of a computation
+    # Returns:
+    #    None
     def done(self, returned):
         self._returned = returned
         self._state = STATE_COMPLETE
@@ -41,21 +59,41 @@ class Computation(object):
             f = self._callbacks.pop(0)
             f(returned)
 
-#
-# NOTE: Currently runnables expect the worker to have the correct packages
-#       installed, and that the function doesn't modify / depend on globals or
-#       lexical scope (may consider changing the last two)
-#
-
 class Runnable(object):
-    """A serializable representation of work to run."""
+    """
+    A serializable representation of work to run.
 
-    def __init__(self, f_code=""):
-        #
-        # TODO : Think of some way to represent args
-        #
+    Assumptions:
+        - Expect the worker to have the correct packages installed
+        - Function doesn't modify / depend on globals or lexical scope
+    """
+
+    # Function:
+    #     TODO
+    # Args:
+    #     TODO
+    # Returns:
+    #    TODO
+    def __init__(self, f_code, f_args=[]):
+        """
+        Initializes a Runnable object
+
+        Args:
+            f_code (function) : function to be remote executed
+            f_args (array)    : arguments to function that should be executed
+
+        Returns:
+            Nothing.
+        """
         self._f_code = f_code
+        self._f_args = f_args
 
+    # Function:
+    #     TODO
+    # Args:
+    #     TODO
+    # Returns:
+    #    TODO
     def serialize(self):
         #
         # TODO : replace with Protobufs
@@ -64,6 +102,12 @@ class Runnable(object):
             'f_code': self._f_code,
         })
 
+    # Function:
+    #     TODO
+    # Args:
+    #     TODO
+    # Returns:
+    #    TODO
     @classmethod
     def from_function(cls, f):
         #
@@ -72,19 +116,38 @@ class Runnable(object):
         #
         return cls("# PLEASE IMPLEMENT")
 
+    # Function:
+    #     TODO
+    # Args:
+    #     TODO
+    # Returns:
+    #    TODO
     @classmethod
     def unserialize(cls, value):
         unserialized = json.parse(unserialized_values)
         return cls(f_code=unserialized['f_code'])
 
 
+# worker sends this back to the nexus
 class Returned(object):
     """A serializable of work that ran."""
 
+    # Function:
+    #     TODO
+    # Args:
+    #     TODO
+    # Returns:
+    #    TODO
     def __init__(self, is_exception=False, value=None):
         self._is_exception = is_exception
         self._value = value
 
+    # Function:
+    #     TODO
+    # Args:
+    #     TODO
+    # Returns:
+    #    TODO
     def serialize(self):
         #
         # TODO : replace with Protobufs, also this will fail is self._value is an exception
@@ -94,6 +157,12 @@ class Returned(object):
             'value': self._value
         })
 
+    # Function:
+    #     TODO
+    # Args:
+    #     TODO
+    # Returns:
+    #    TODO
     @classmethod
     def unserialize(cls, value):
         unserialized = json.loads(value)

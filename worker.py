@@ -61,12 +61,12 @@ class Worker(object):
                 return "Worker busy"
             else:
                 #
-                # TODO : Extract runnable_string from payload
+                # TODO : Extract runnable_string and actual function call from payload
                 #
                 runnable_string = ""
 
                 # Dispatch a new thread with do_computation
-                thread.start_new_thread(self.do_computation, (runnable_string, ))
+                thread.start_new_thread(self.do_computation, (runnable_string))
                 return "Job starts running"
         else:
             return 'Unsupported action'
@@ -88,6 +88,7 @@ class Worker(object):
 
         #
         # TODO: Real job
+        # THIS IS WHERE YOU DO THE ACTUAL FUNCTION CALL AND STORE THE RESULT
         # 
 
         # Syncing state is probably sufficient

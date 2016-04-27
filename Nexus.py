@@ -65,35 +65,67 @@ class Nexus(object):
     queue computations for workers.
     """
 
+    # Function:
+    #     Initialize a Nexus object
+    #
     def __init__(self):
         self._workers = []
-        self._queued_runnables = []
+        self._queued_computations = []
 
+    # Function:
+    #     Registers a worker to this nexus
+    # Args:
+    #     addr (string)     : IP address of the worker
+    #     password (string) : password for the worker 
+    # Returns:
+    #    None
     # addr should be ip_address:port (i.e. 10.10.0.1:1234)
     def register_worker(self, addr, password):
         new_worker = RemoteWorker(self, addr, password)
         self._workers.append(new_worker)
 
     def load_work(self, computation):
-        self._queued_runnables.append(computation)
+        self._queued_computations.append(computation)
 
+    # Function:
+    #     Unloads queued Computation objects to remote worker(s)
+    # Args:
+    #     None
+    # Returns:
+    #    None
     def unload_work(self):
         # TODO: needs a lot of error handling. No worker? No job to run?
         for worker in self._workers:
             if worker._state == STATE_READY:
                 self.assign_work_to(worker)
 
+    # Function:
+    #     Assigns a Computation object to a specific worker. Does nothing
+    #     if no queued Computation objects.
+    # Args:
+    #     remote_worker (instance) : remote worker to send computation object to
+    # Returns:
+    #    None
     def assign_work_to(self, remote_worker):
-        if len(self._queued_runnables) == 0:
+        if len(self._queued_computations) == 0:
             return
 
-        computation = self._queued_runnables.pop(0)
+        # nexus sends Computation objects to workers
+        computation = self._queued_computations.pop(0)
         remote_worker.assign_work(computation)
 
 
 class RemoteWorker(object):
     """The Nexus' interal representation of Workers."""
 
+    # Function:
+    #     Initialize a RemoteWorker object
+    # Args:
+    #     nexus (instance)  : nexus object this worker will "belong" to
+    #     addr  (string)    : IP address of the worker
+    #     password (string) : password for the worker
+    # Returns:
+    #    None
     def __init__(self, nexus, addr, password):
         self._state = STATE_READY
         self._running = None
@@ -101,17 +133,26 @@ class RemoteWorker(object):
         self._password = password
         self._nexus = nexus
 
-        #
         # Set up self.ping to run every few seconds in a different thread
-        #
         thread.start_new_thread(self.ping, ())
 
+    # Function:
+    #     Assign work to a remote worker
+    # Args:
+    #     computation (instance) : Computation object
+    # Returns:
+    #    TODO
     def assign_work(self, computation):
         self._state = STATE_RUNNING
         self._running = computation
 
         #
         # TODO : Actually transmit to the remote worker instance
+        #
+
+        #
+        # THIS IS WHERE YOU ACTUALLY CONVERT A COMPUTABLE OBJECT INTO A SERIALIZED
+        # SOMETHING. USE JSON FOR NOW
         #
 
         try:
