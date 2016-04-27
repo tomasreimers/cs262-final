@@ -149,6 +149,7 @@ class RemoteWorker(object):
         #
         # TODO : Actually transmit to the remote worker instance
         #
+        print computation
 
         #
         # THIS IS WHERE YOU ACTUALLY CONVERT A COMPUTABLE OBJECT INTO A SERIALIZED

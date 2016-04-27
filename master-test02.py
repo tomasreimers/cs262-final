@@ -17,11 +17,11 @@ if __name__ == '__main__':
 	computation = Resources.Computation(runnable)
 	computation.then(print_result)
 
-	# # create nexus, register worker, and send code to remote machine
+	# create nexus, register worker, and send code to remote machine
 	nexus = Nexus.Nexus()
 	nexus.register_worker("http://localhost:5000/", "")
-	# time.sleep(3)
+	time.sleep(3)
 
-	# # send work to a remote machine
+	# send work to a remote machine
 	nexus.load_work(computation)
 	nexus.unload_work()
