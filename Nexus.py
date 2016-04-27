@@ -137,7 +137,7 @@ class RemoteWorker(object):
         thread.start_new_thread(self.ping, ())
 
     # Function:
-    #     Assign work to a remote worker
+    #     Assign work to a remote worker. Currently serializes object using JSON
     # Args:
     #     computation (instance) : Computation object
     # Returns:
@@ -146,24 +146,39 @@ class RemoteWorker(object):
         self._state = STATE_RUNNING
         self._running = computation
 
-        #
-        # TODO : Actually transmit to the remote worker instance
-        #
-        print computation
+        print "About to assign runnable to worker"
 
-        #
-        # THIS IS WHERE YOU ACTUALLY CONVERT A COMPUTABLE OBJECT INTO A SERIALIZED
-        # SOMETHING. USE JSON FOR NOW
-        #
-
+        # send a post request with the data
         try:
-            res = requests.get(self._addr + "computation", timeout=0.5)
+            res = requests.post(self._addr + "computation", data=computation._runnable.serialize())
         except requests.exceptions.ConnectionError as e:
             # Encountered issue connecting to worker, log error message and
             # invalidate this worker
             print e
             self._state = STATE_DEAD
             return 1
+
+        # dummy GET request
+        # try:
+        #     res = requests.get(self._addr + "computation", timeout=0.5)
+        # except requests.exceptions.ConnectionError as e:
+        #     # Encountered issue connecting to worker, log error message and
+        #     # invalidate this worker
+        #     print e
+        #     self._state = STATE_DEAD
+        #     return 1
+
+
+
+
+
+
+
+
+
+
+
+
 
     def ping(self):
         while True:
@@ -188,8 +203,10 @@ class RemoteWorker(object):
                 # Othersiew, the worker should be retuning a result from computatoin.
                 # Try to deserialize data
                 # TODO: Definately needs error handling here.
+                print "log: worker returned a result"
                 returned = Resources.Returned.unserialize(res.text)
-                self._running.done(returned)
+                # TODO: comment this back in at some point
+                # self._running.done(returned)
             time.sleep(1)
 
         #

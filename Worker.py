@@ -21,7 +21,7 @@ class Worker(object):
 
     def __init__(self):
         self.app = Flask(__name__)
-        self.app.add_url_rule('/<action>', view_func = self.heartbeat_handler)
+        self.app.add_url_rule('/<action>', view_func=self.heartbeat_handler, methods=["GET", "POST"])
 
         self.state = 0
         self.result = None
@@ -63,6 +63,10 @@ class Worker(object):
                 #
                 # TODO : Extract runnable_string and actual function call from payload
                 #
+                print "HEREREERE1"
+                print request
+                print request.data
+                print "HERERERERE2"
                 runnable_string = ""
 
                 # Dispatch a new thread with do_computation

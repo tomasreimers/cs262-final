@@ -3,6 +3,7 @@ from flask import Flask
 import thread
 import time
 import requests
+import inspect
 
 STATE_READY = 1
 STATE_RUNNING = 2
@@ -89,17 +90,17 @@ class Runnable(object):
         self._f_args = f_args
 
     # Function:
-    #     TODO
+    #     Create a serialized string to send to remote worker
     # Args:
     #     TODO
     # Returns:
-    #    TODO
+    #    string
     def serialize(self):
-        #
+        # TODO : remove this and use below
         # TODO : replace with Protobufs
-        #
         return json.dumps({
-            'f_code': self._f_code,
+            'f_code': inspect.getsource(self._f_code),
+            'f_args': self._f_args
         })
 
     # Function:
