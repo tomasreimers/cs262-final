@@ -21,16 +21,12 @@ class Worker(object):
     """The remote server, this accepts work from a nexus and runs it."""
 
     def __init__(self):
+        self.state = 0
+        self.result = None
+        # flask
         self.app = Flask(__name__)
         self.app.add_url_rule('/<action>', view_func=self.heartbeat_handler, methods=["GET"])
 
-        self.state = 0
-        self.result = None
-
-        #
-        # TODO : Should start a threadpool to execute tasks in, then call
-        #        self.start()
-        #
 
     """
     Handles computation requests and periodic pings from master.
@@ -49,6 +45,8 @@ class Worker(object):
             # Might be helpful to add STATE_RETURNED.
             #
             if self.state == STATE_COMPLETE:
+                # reset worker state to ready
+                self.state = STATE_READY
                 print "Return result"
                 return self.result
             else:
@@ -78,32 +76,31 @@ class Worker(object):
     Args:
         runnable_string (string) : data to be deserialized
     Returns:
-       None
+        None
 
-    TODO: 
-        Unserialize runnable_string, create a Runnable instance and
-        execute in current thread. Also need to sync updates to self.state
-        and self.result
+    TODO:
+        - This breaks if you pass a function inside of a class
     """
     def do_computation(self, runnable_string):
-        # deserialize data
+        # unserialize data
         self.state = STATE_RUNNING
+        print "func. do_computation log | Runnable string: ", runnable_string
         f_data = json.loads(runnable_string)
         f_args = f_data["f_args"]
         f_code = f_data["f_code"]
         f_name = f_code.split("\n")[0].split(" ")[1].split("(")[0]
-        print "do_computation log | Got these f_args from the client: ", f_args
-        print "do_computation log | Got this f_code from the client: \n", f_code
-        print "do_computation log | Extracted this function name from f_code: ", f_name
+        print "func. do_computation log | Got these f_args from the client: ", f_args
+        print "func. do_computation log | Got this f_code from the client: \n", f_code
+        print "func. do_computation log | Extracted this function name from f_code: ", f_name
 
         # compute result
         exec(f_code)
         exec("f_result = " + self.create_function_call(f_name, f_args))
-        print "do_computation log | Computed result: ", f_result
+        print "func. do_computation log | Computed result: ", f_result
 
         # update state
-        dummy_result = Resources.Returned(value="Dummy result")
-        self.result = dummy_result.serialize()
+        f_result = Resources.Returned(value=f_result)
+        self.result = f_result.serialize()
         self.state = STATE_COMPLETE
         print "Job complete"
 

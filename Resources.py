@@ -47,11 +47,11 @@ class Computation(object):
             self._callbacks.append(callback)
 
     # Function:
-    #     Execute / prepare execution of a callback on the result of a computation
+    #     
     # Args:
-    #     callback (function) : function to be executed on the result of a computation
+    #     
     # Returns:
-    #    None
+    #    
     def done(self, returned):
         self._returned = returned
         self._state = STATE_COMPLETE
@@ -150,9 +150,7 @@ class Returned(object):
     # Returns:
     #    TODO
     def serialize(self):
-        #
         # TODO : replace with Protobufs, also this will fail is self._value is an exception
-        #
         return json.dumps({
             'is_exception': self._is_exception,
             'value': self._value

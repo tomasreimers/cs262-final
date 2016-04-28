@@ -146,10 +146,10 @@ class RemoteWorker(object):
         self._state = STATE_RUNNING
         self._running = computation
 
-        print "About to assign runnable to worker"
-
-        # send a post request with the data
+        print "func. assign_work log | About to assign runnable to worker"
         try:
+            # send get request with data
+            print "func. assign_work log | computation._runnable.serialize(): ", computation._runnable.serialize()
             res = requests.get(self._addr + "computation", data=computation._runnable.serialize())
         except requests.exceptions.ConnectionError as e:
             # Encountered issue connecting to worker, log error message and
@@ -157,28 +157,6 @@ class RemoteWorker(object):
             print e
             self._state = STATE_DEAD
             return 1
-
-        # dummy GET request
-        # try:
-        #     res = requests.get(self._addr + "computation", timeout=0.5)
-        # except requests.exceptions.ConnectionError as e:
-        #     # Encountered issue connecting to worker, log error message and
-        #     # invalidate this worker
-        #     print e
-        #     self._state = STATE_DEAD
-        #     return 1
-
-
-
-
-
-
-
-
-
-
-
-
 
     def ping(self):
         while True:
@@ -200,13 +178,13 @@ class RemoteWorker(object):
                 print "heartbeat alive"
                 pass
             else:
-                # Othersiew, the worker should be retuning a result from computatoin.
+                # Otherwise, the worker should be retuning a result from computatoin.
                 # Try to deserialize data
                 # TODO: Definately needs error handling here.
-                print "log: worker returned a result"
+                print "func. ping log | worker returned a result"
                 returned = Resources.Returned.unserialize(res.text)
                 # TODO: comment this back in at some point
-                # self._running.done(returned)
+                self._running.done(returned)
             time.sleep(1)
 
         #

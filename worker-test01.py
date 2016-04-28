@@ -13,6 +13,7 @@ class TestWorkerStates(unittest.TestCase):
         p.start()
 
     def test_heartbeat(self):
+        print "HERERERE"
         r = requests.get('http://localhost:5000/heartbeat')
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.text, "State ready")
