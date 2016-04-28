@@ -74,6 +74,31 @@ class TestRemoteFunctionExecution():
 		nexus.unload_work()
 		time.sleep(5)
 
+	"""
+	Function call:
+		count_occurrences("this is a string", "s")
+	Expected print value:
+		4
+	"""
+	def test_2(self):
+		print "Running test #2"
+
+		# prepare computation object being sent to client
+		runnable = Resources.Runnable(count_occurrences, ["apple apple apple apple", "a"])
+		computation = Resources.Computation(runnable)
+		computation.then(print_result)
+
+		# create nexus, register worker, and send code to remote machine
+		nexus = Nexus.Nexus()
+		nexus.register_worker("http://localhost:5000/", "")
+		time.sleep(1)
+
+		# send work to a remote machine
+		nexus.load_work(computation)
+		nexus.unload_work()
+		time.sleep(5)
+
 if __name__ == '__main__':
 	tester = TestRemoteFunctionExecution()
 	tester.test_1()
+	tester.test_2()

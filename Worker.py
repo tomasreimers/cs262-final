@@ -47,7 +47,7 @@ class Worker(object):
             if self.state == STATE_COMPLETE:
                 # reset worker state to ready
                 self.state = STATE_READY
-                print "Return result"
+                print "Return result, resetting state to ready"
                 return self.result
             else:
                 print "Heartbeat at " + STATE_STRINGS[self.state]
@@ -66,8 +66,29 @@ class Worker(object):
         else:
             return 'Unsupported action'
 
+    """
+    Function:
+        Creates a string function call
+    Args:
+        f_name (string) : name of the function
+        f_args (list)   : arguments for the function call
+    Returns:
+        string
+    """
     def create_function_call(self, f_name, f_args):
-        f_call = f_name + "(" + ",".join(map(lambda x: str(x), f_args)) + ")"
+        f_call = f_name + "("
+        for f_arg in f_args:
+            if isinstance(f_arg, unicode) or isinstance(f_arg, str):
+                if f_call[-1] == "(":
+                    f_call += "'%s'" % (f_arg)
+                else:
+                    f_call += ",'%s'" % (f_arg)
+            else:
+                if f_call[-1] == "(":
+                    f_call += str(f_arg)
+                else:
+                    f_call += "," + str(f_arg)
+        f_call += ")"
         return f_call
 
     """
@@ -77,7 +98,6 @@ class Worker(object):
         runnable_string (string) : data to be deserialized
     Returns:
         None
-
     TODO:
         - This breaks if you pass a function inside of a class
     """
