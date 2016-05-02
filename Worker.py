@@ -124,25 +124,23 @@ class Worker(object):
         self.state = STATE_COMPLETE
         print "Job complete"
 
+    """
+    Function:
+        Starts a flask server and print location / password. The flask server receives
+        requests (either pings - status updates) or actual requests for computation (this
+        must happen in a separate thread).
+        Reject any requests that lack a password (random string)
+    Args:
+        None
+    Returns:
+        None
+    """
     def start(self):
         self.state = STATE_READY
 
-        #
-        # NOTE: May or may not be necessary to set threaded = True, since the request
+        # May or may not be necessary to set threaded = True, since the request
         # handler could just be a single thread
-        #
+        # http://lybniz2.sourceforge.net/safeeval.html -- consider using this to pass
+        # globals / locals found in f.func_globals
         print "Worker starts"
         self.app.run(threaded = True)
-
-        #
-        # TODO : should start a flask server a print the location / password.
-        #        the flask server recieves requests (either pings (status
-        #        updates) or actual requests for computation -- NOTE:
-        #        computation _MUST_ happen in a separate thread)
-        #
-        # NOTE : this generates a password (random string), reject any requests
-        #        that lack the password.
-        #
-
-    # http://lybniz2.sourceforge.net/safeeval.html -- consider using this to pass
-    # globals / locals found in f.func_globals
