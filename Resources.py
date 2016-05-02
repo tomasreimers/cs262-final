@@ -39,7 +39,7 @@ class Computation(object):
     # Args:
     #     callback (function) : function to be executed on the result of a computation
     # Returns:
-    #    None
+    #     None
     def then(self, callback):
         if (self._state == STATE_COMPLETE):
             callback(self._returned)

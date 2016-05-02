@@ -44,10 +44,14 @@ def count_occurrences(s, ch):
 class TestRemoteFunctionExecution():
 	"""
 	How to run:
-		1) execute python run_worker.py in on terminal window
+		1) execute python run_worker.py in a terminal window
 		2) execute python nick-master-test.py in another terminal window
 		3) check logs to see if computed result matches expected result
 	"""
+
+	def set_up(self):
+		self.nexus = Nexus.Nexus()
+		self.nexus.register_worker("http://localhost:5000/", "")
 
 	"""
 	Function call:
@@ -65,18 +69,18 @@ class TestRemoteFunctionExecution():
 		computation.then(print_result)
 
 		# create nexus, register worker, and send code to remote machine
-		nexus = Nexus.Nexus()
-		nexus.register_worker("http://localhost:5000/", "")
-		time.sleep(1)
+		# nexus = Nexus.Nexus()
+		# nexus.register_worker("http://localhost:5000/", "")
+		# time.sleep(1)
 
 		# send work to a remote machine
-		nexus.load_work(computation)
-		nexus.unload_work()
+		self.nexus.load_work(computation)
+		self.nexus.unload_work()
 		time.sleep(5)
 
 	"""
 	Function call:
-		count_occurrences("this is a string", "s")
+		count_occurrences("apple apple apple apple", "a")
 	Expected print value:
 		4
 	"""
@@ -89,16 +93,17 @@ class TestRemoteFunctionExecution():
 		computation.then(print_result)
 
 		# create nexus, register worker, and send code to remote machine
-		nexus = Nexus.Nexus()
-		nexus.register_worker("http://localhost:5000/", "")
-		time.sleep(1)
+		# nexus = Nexus.Nexus()
+		# nexus.register_worker("http://localhost:5000/", "")
+		# time.sleep(1)
 
 		# send work to a remote machine
-		nexus.load_work(computation)
-		nexus.unload_work()
+		self.nexus.load_work(computation)
+		self.nexus.unload_work()
 		time.sleep(5)
 
 if __name__ == '__main__':
 	tester = TestRemoteFunctionExecution()
+	tester.set_up()
 	tester.test_1()
 	tester.test_2()

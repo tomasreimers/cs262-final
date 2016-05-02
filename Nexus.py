@@ -183,6 +183,7 @@ class RemoteWorker(object):
                 # TODO: Definately needs error handling here.
                 print "func. ping log | worker returned a result"
                 returned = Resources.Returned.unserialize(res.text)
+                self._state = STATE_READY
                 # TODO: comment this back in at some point
                 self._running.done(returned)
             time.sleep(1)
