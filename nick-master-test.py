@@ -68,11 +68,6 @@ class TestRemoteFunctionExecution():
 		computation = Resources.Computation(runnable)
 		computation.then(print_result)
 
-		# create nexus, register worker, and send code to remote machine
-		# nexus = Nexus.Nexus()
-		# nexus.register_worker("http://localhost:5000/", "")
-		# time.sleep(1)
-
 		# send work to a remote machine
 		self.nexus.load_work(computation)
 		self.nexus.unload_work()
@@ -91,11 +86,6 @@ class TestRemoteFunctionExecution():
 		runnable = Resources.Runnable(count_occurrences, ["apple apple apple apple", "a"])
 		computation = Resources.Computation(runnable)
 		computation.then(print_result)
-
-		# create nexus, register worker, and send code to remote machine
-		# nexus = Nexus.Nexus()
-		# nexus.register_worker("http://localhost:5000/", "")
-		# time.sleep(1)
 
 		# send work to a remote machine
 		self.nexus.load_work(computation)
