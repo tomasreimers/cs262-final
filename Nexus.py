@@ -65,52 +65,68 @@ class Nexus(object):
     queue computations for workers.
     """
 
-    # Function:
-    #     Initialize a Nexus object
-    #
+    """
+    Function:
+        Initialize a Nexus object
+    """
     def __init__(self):
         self._workers = []
         self._queued_computations = []
 
-    # Function:
-    #     Registers a worker to this nexus
-    # Args:
-    #     addr (string)     : IP address of the worker
-    #     password (string) : password for the worker 
-    # Returns:
-    #    None
-    # addr should be ip_address:port (i.e. 10.10.0.1:1234)
+    """
+    Function:
+        Registers a worker to this nexus
+    Args:
+        addr (string)     : IP address of the worker
+        password (string) : password for the worker 
+    Returns:
+        None
+    Notes:
+        addr should be ip_address:port (i.e. 10.10.0.1:1234)
+    """
     def register_worker(self, addr, password):
         new_worker = RemoteWorker(self, addr, password)
         self._workers.append(new_worker)
 
+    """
+    Function:
+        Queues computation that will be assigned to a worker
+    Args:  
+        computation (classobj) - a Computation object
+    Returns:
+        None
+    """
     def load_work(self, computation):
         self._queued_computations.append(computation)
 
-    # Function:
-    #     Unloads queued Computation objects to remote worker(s)
-    # Args:
-    #     None
-    # Returns:
-    #    None
+    """
+    Function:
+        Unloads queued Computation objects to remote worker(s)
+    Args:
+        None
+    Returns:
+        None
+   """
     def unload_work(self):
         # TODO: needs a lot of error handling. No worker? No job to run?
         for worker in self._workers:
             if worker._state == STATE_READY:
                 self.assign_work_to(worker)
 
-    # Function:
-    #     Assigns a Computation object to a specific worker. Does nothing
-    #     if no queued Computation objects.
-    # Args:
-    #     remote_worker (instance) : remote worker to send computation object to
-    # Returns:
-    #    None
+    """
+    Function:
+        Assigns a Computation object to a specific worker. Does nothing
+        if no queued Computation objects.
+    Args:
+        remote_worker (classobj) : remote worker to send computation object to
+    Returns:
+        None
+    """
     def assign_work_to(self, remote_worker):
         if len(self._queued_computations) == 0:
             return
 
-        # nexus sends Computation objects to workers
+        # send Computation objects to workers
         computation = self._queued_computations.pop(0)
         remote_worker.assign_work(computation)
 
@@ -118,14 +134,16 @@ class Nexus(object):
 class RemoteWorker(object):
     """The Nexus' interal representation of Workers."""
 
-    # Function:
-    #     Initialize a RemoteWorker object
-    # Args:
-    #     nexus (instance)  : nexus object this worker will "belong" to
-    #     addr  (string)    : web address of the worker
-    #     password (string) : password for the worker
-    # Returns:
-    #    None
+    """
+    Function:
+        Initialize a RemoteWorker object
+    Args:
+        nexus (classobj)  : nexus object this worker will "belong" to
+        addr  (string)    : web address of the worker
+        password (string) : password for the worker
+    Returns:
+        None
+    """
     def __init__(self, nexus, addr, password):
         self._state = STATE_READY
         self._running = None
@@ -133,15 +151,17 @@ class RemoteWorker(object):
         self._password = password
         self._nexus = nexus
 
-        # Set up self.ping to run every few seconds in a different thread
+        # set up self.ping to run every few seconds in a different thread
         thread.start_new_thread(self.ping, ())
 
-    # Function:
-    #     Assign work to a remote worker. Currently serializes object using JSON
-    # Args:
-    #     computation (instance) : Computation object
-    # Returns:
-    #    TODO
+    """
+    Function:
+        Assign work to a remote worker. Currently serializes object using JSON
+    Args:
+        computation (classobj) : Computation object
+    Returns:
+        None
+    """
     def assign_work(self, computation):
         self._state = STATE_RUNNING
         self._running = computation
@@ -158,6 +178,14 @@ class RemoteWorker(object):
             self._state = STATE_DEAD
             return 1
 
+    """
+    Function:
+        Manage state of remote workers
+    Args:
+        None
+    Returns:
+        None
+    """
     def ping(self):
         while True:
 
@@ -187,19 +215,3 @@ class RemoteWorker(object):
                 # TODO: comment this back in at some point
                 self._running.done(returned)
             time.sleep(1)
-
-        #
-        # TODO : Ping the server every few seconds for status, the server sends back
-        #        STATE_READY, STATE_RUNNING, STATE_COMPLETE -- should it be complete,
-        #        it should also send back the returned and switch its own state to ready.
-        #        When this returns STATE_READY or STATE_COMPLETE it should tell the
-        #        nexus to assign it more work. The pings will need to happen in a
-        #        separate thread -- consider setting up a thread pool for all the
-        #        RemoteWorker objects on the nexus.
-        #
-        #        (https://docs.python.org/2/library/multiprocessing.html)
-        #
-        #        P.s. also consider thread safety
-        #
-
-        pass
