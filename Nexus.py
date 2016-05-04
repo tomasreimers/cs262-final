@@ -76,7 +76,7 @@ class Nexus(object):
     #     Registers a worker to this nexus
     # Args:
     #     addr (string)     : IP address of the worker
-    #     password (string) : password for the worker 
+    #     password (string) : password for the worker
     # Returns:
     #    None
     # addr should be ip_address:port (i.e. 10.10.0.1:1234)
@@ -171,11 +171,15 @@ class RemoteWorker(object):
                 # kill heartbeat thread and invalidate this worker
                 print e
                 self._state = STATE_DEAD
+
+                # Return computation back to nexus' queue
+                self._nexus.load_work(self._running)
                 return 1
 
             # If worker is ready or running, heartbeat is okay
-            if res.text == STATE_STRINGS[STATE_READY] or res.text == STATE_STRINGS[STATE_RUNNING]:
+            if res.text == str(STATE_READY) or res.text == str(STATE_RUNNING):
                 print "heartbeat alive"
+                self.state = int(res.text)
                 pass
             else:
                 # Otherwise, the worker should be retuning a result from computatoin.
