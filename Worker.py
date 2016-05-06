@@ -51,7 +51,7 @@ class Worker(object):
                 return self.result
             else:
                 print "Heartbeat at " + STATE_STRINGS[self.state]
-                return STATE_STRINGS[self.state]
+                return str(self.state)
 
         elif action == "computation":
             print "Incoming job"
@@ -105,18 +105,41 @@ class Worker(object):
         # unserialize data
         self.state = STATE_RUNNING
         print "func. do_computation log | Runnable string: ", runnable_string
-        f_data = json.loads(runnable_string)
-        f_args = f_data["f_args"]
-        f_code = f_data["f_code"]
-        f_name = f_code.split("\n")[0].split(" ")[1].split("(")[0]
-        print "func. do_computation log | Got these f_args from the client: ", f_args
-        print "func. do_computation log | Got this f_code from the client: \n", f_code
-        print "func. do_computation log | Extracted this function name from f_code: ", f_name
 
-        # compute result
-        exec(f_code)
-        exec("f_result = " + self.create_function_call(f_name, f_args))
-        print "func. do_computation log | Computed result: ", f_result
+        # DO NOT trust user's request. Catch exception at every step
+        try:
+            # try to deserialize request
+            f_data = json.loads(runnable_string)
+
+            # try to retrive code and argument
+            f_args = f_data["f_args"]
+            f_code = f_data["f_code"]
+
+            # try to retrive function name
+            f_name = f_code.split("\n")[0].split(" ")[1].split("(")[0]
+
+            print "func. do_computation log | Got these f_args from the client: ", f_args
+            print "func. do_computation log | Got this f_code from the client: \n", f_code
+            print "func. do_computation log | Extracted this function name from f_code: ", f_name
+
+            # try to define user function
+            exec(f_code)
+
+            # try to execute function with user arguments
+            exec("f_result = " + self.create_function_call(f_name, f_args))
+
+            print "func. do_computation log | Computed result: ", f_result
+        except Exception as e:
+            if isinstance(e, ValueError):
+                print "Empty or invalid serialization"
+            elif isinstance(e, KeyError):
+                print "Invalid computation object or function declaration"
+            else:
+                print "Could not execute computation"
+
+            # set state to ready if compuatation fails
+            self.state = STATE_READY
+            return
 
         # update state
         f_result = Resources.Returned(value=f_result)
