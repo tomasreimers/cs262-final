@@ -33,14 +33,6 @@
 #  - https://www.quora.com/Distributed-Systems-How-and-when-is-state-machine-replication-useful-in-practice
 #
 
-
-#
-# GENERAL NOTE:
-#  - Do we need to put locks around everything? Or does the GIL protect thread
-#    thread operations.
-#
-
-
 import json
 from flask import Flask
 import thread
@@ -76,7 +68,7 @@ class Nexus(object):
     #     Registers a worker to this nexus
     # Args:
     #     addr (string)     : IP address of the worker
-    #     password (string) : password for the worker 
+    #     password (string) : password for the worker
     # Returns:
     #    None
     # addr should be ip_address:port (i.e. 10.10.0.1:1234)
@@ -187,19 +179,3 @@ class RemoteWorker(object):
                 # TODO: comment this back in at some point
                 self._running.done(returned)
             time.sleep(1)
-
-        #
-        # TODO : Ping the server every few seconds for status, the server sends back
-        #        STATE_READY, STATE_RUNNING, STATE_COMPLETE -- should it be complete,
-        #        it should also send back the returned and switch its own state to ready.
-        #        When this returns STATE_READY or STATE_COMPLETE it should tell the
-        #        nexus to assign it more work. The pings will need to happen in a
-        #        separate thread -- consider setting up a thread pool for all the
-        #        RemoteWorker objects on the nexus.
-        #
-        #        (https://docs.python.org/2/library/multiprocessing.html)
-        #
-        #        P.s. also consider thread safety
-        #
-
-        pass
