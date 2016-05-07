@@ -20,9 +20,11 @@ STATE_STRINGS = {
 class Worker(object):
     """The remote server, this accepts work from a nexus and runs it."""
 
-    def __init__(self):
+    def __init__(self, password=None):
         self.state = 0
         self.result = None
+        self.password = password
+
         # flask
         self.app = Flask(__name__)
         self.app.add_url_rule('/<action>', view_func=self.heartbeat_handler, methods=["GET"])
@@ -36,6 +38,10 @@ class Worker(object):
     Otherwise, heartbeat just reports worker's status to master.
     """
     def heartbeat_handler(self, action):
+        if self.password is not None:
+            if request.args.get('password') != self.password:
+                return "Invalid auth."
+
         if action == "heartbeat":
             # If worker has completed a job, return self.result with this
             # heartbeat. Otherwise, report self.state.
@@ -48,10 +54,17 @@ class Worker(object):
                 # reset worker state to ready
                 self.state = STATE_READY
                 print "Return result, resetting state to ready"
-                return self.result
+                return json.dumps({
+                    'status_code': STATE_COMPLETE,
+                    'status_text': STATE_STRINGS[STATE_COMPLETE],
+                    'result': self.result
+                })
             else:
                 print "Heartbeat at " + STATE_STRINGS[self.state]
-                return str(self.state)
+                return json.dumps({
+                    'status_code': self.state,
+                    'status_text': STATE_STRINGS[self.state]
+                })
 
         elif action == "computation":
             print "Incoming job"
@@ -105,41 +118,18 @@ class Worker(object):
         # unserialize data
         self.state = STATE_RUNNING
         print "func. do_computation log | Runnable string: ", runnable_string
+        f_data = json.loads(runnable_string)
+        f_args = f_data["f_args"]
+        f_code = f_data["f_code"]
+        f_name = f_code.split("\n")[0].split(" ")[1].split("(")[0]
+        print "func. do_computation log | Got these f_args from the client: ", f_args
+        print "func. do_computation log | Got this f_code from the client: \n", f_code
+        print "func. do_computation log | Extracted this function name from f_code: ", f_name
 
-        # DO NOT trust user's request. Catch exception at every step
-        try:
-            # try to deserialize request
-            f_data = json.loads(runnable_string)
-
-            # try to retrive code and argument
-            f_args = f_data["f_args"]
-            f_code = f_data["f_code"]
-
-            # try to retrive function name
-            f_name = f_code.split("\n")[0].split(" ")[1].split("(")[0]
-
-            print "func. do_computation log | Got these f_args from the client: ", f_args
-            print "func. do_computation log | Got this f_code from the client: \n", f_code
-            print "func. do_computation log | Extracted this function name from f_code: ", f_name
-
-            # try to define user function
-            exec(f_code)
-
-            # try to execute function with user arguments
-            exec("f_result = " + self.create_function_call(f_name, f_args))
-
-            print "func. do_computation log | Computed result: ", f_result
-        except Exception as e:
-            if isinstance(e, ValueError):
-                print "Empty or invalid serialization"
-            elif isinstance(e, KeyError):
-                print "Invalid computation object or function declaration"
-            else:
-                print "Could not execute computation"
-
-            # set state to ready if compuatation fails
-            self.state = STATE_READY
-            return
+        # compute result
+        exec(f_code)
+        f_result = eval(self.create_function_call(f_name, f_args))
+        print "func. do_computation log | Computed result: ", f_result
 
         # update state
         f_result = Resources.Returned(value=f_result)
@@ -151,21 +141,12 @@ class Worker(object):
         self.state = STATE_READY
 
         #
-        # NOTE: May or may not be necessary to set threaded = True, since the request
+        # TODO: May or may not be necessary to set threaded = True, since the request
         # handler could just be a single thread
         #
+
         print "Worker starts"
         self.app.run(threaded = True)
-
-        #
-        # TODO : should start a flask server a print the location / password.
-        #        the flask server recieves requests (either pings (status
-        #        updates) or actual requests for computation -- NOTE:
-        #        computation _MUST_ happen in a separate thread)
-        #
-        # NOTE : this generates a password (random string), reject any requests
-        #        that lack the password.
-        #
 
     # http://lybniz2.sourceforge.net/safeeval.html -- consider using this to pass
     # globals / locals found in f.func_globals

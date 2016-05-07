@@ -1,5 +1,5 @@
-import Nexus
-import Worker
+from lib import Nexus
+from lib import Worker
 import unittest
 import requests
 import time

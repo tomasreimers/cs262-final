@@ -1,6 +1,6 @@
-import Nexus
-import Worker
-import Resources
+from lib import Nexus
+from lib import Worker
+from lib import Resources
 import unittest
 import requests
 import time
@@ -41,6 +41,18 @@ def count_occurrences(s, ch):
 			count += 1
 	return count
 
+def factorial(n):
+	if n < 0:
+		return -1 # signal errors
+	elif n == 0:
+		return 1
+	else:
+		to_return = 1
+		for i in xrange(1, n + 1):
+			to_return *= i
+		return to_return
+
+
 class TestRemoteFunctionExecution():
 	"""
 	How to run:
@@ -59,7 +71,7 @@ class TestRemoteFunctionExecution():
 
 	Expected print value:
 		3
-	""" 
+	"""
 	def test_1(self):
 		print "Running test #1"
 
@@ -75,8 +87,8 @@ class TestRemoteFunctionExecution():
 
 		# send work to a remote machine
 		self.nexus.load_work(computation)
-		self.nexus.unload_work()
-		time.sleep(5)
+
+		self.nexus.wait()
 
 	"""
 	Function call:
@@ -99,11 +111,28 @@ class TestRemoteFunctionExecution():
 
 		# send work to a remote machine
 		self.nexus.load_work(computation)
-		self.nexus.unload_work()
-		time.sleep(5)
+
+		self.nexus.wait()
+
+	def test_3(self):
+		print "Running test #3"
+
+		def output_of(name):
+			def wrapped(result):
+				print name, ":", result._value
+			return wrapped
+
+		sfactorial = self.nexus.shard(factorial)
+
+		sfactorial(4).then(output_of("4!"))
+		sfactorial(5).then(output_of("5!"))
+		sfactorial(6).then(output_of("6!"))
+
+		self.nexus.wait()
 
 if __name__ == '__main__':
 	tester = TestRemoteFunctionExecution()
 	tester.set_up()
 	tester.test_1()
 	tester.test_2()
+	tester.test_3()

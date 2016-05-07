@@ -47,15 +47,15 @@ class Computation(object):
             self._callbacks.append(callback)
 
     # Function:
-    #     
+    #
     # Args:
-    #     
+    #
     # Returns:
-    #    
+    #
     def done(self, returned):
         self._returned = returned
         self._state = STATE_COMPLETE
-                        
+
         while (len(self._callbacks) > 0):
             f = self._callbacks.pop(0)
             f(returned)
@@ -125,7 +125,7 @@ class Runnable(object):
     #    TODO
     @classmethod
     def unserialize(cls, value):
-        unserialized = json.parse(unserialized_values)
+        unserialized = json.parse(value)
         return cls(f_code=unserialized['f_code'])
 
 
