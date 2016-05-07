@@ -127,6 +127,7 @@ class TestRemoteFunctionExecution():
 		sfactorial(4).then(output_of("4!"))
 		sfactorial(5).then(output_of("5!"))
 		sfactorial(6).then(output_of("6!"))
+		sfactorial(100).then(output_of("100!"))
 
 		self.nexus.wait()
 

@@ -3,7 +3,9 @@ from flask import Flask
 import thread
 import time
 import requests
+import dill
 import inspect
+import base64
 
 STATE_READY = 1
 STATE_RUNNING = 2
@@ -75,7 +77,7 @@ class Runnable(object):
     #     TODO
     # Returns:
     #    TODO
-    def __init__(self, f_code, f_args=[]):
+    def __init__(self, f_code, f_args=None, f_kwargs=None):
         """
         Initializes a Runnable object
 
@@ -86,8 +88,15 @@ class Runnable(object):
         Returns:
             Nothing.
         """
+        if f_args is None:
+            f_args = []
+
+        if f_kwargs is None:
+            f_kwargs = {}
+
         self._f_code = f_code
         self._f_args = f_args
+        self._f_kwargs = f_kwargs
 
     # Function:
     #     Create a serialized string to send to remote worker
@@ -98,9 +107,12 @@ class Runnable(object):
     def serialize(self):
         # TODO : remove this and use below
         # TODO : replace with Protobufs
+        dilled = base64.b64encode(dill.dumps(self._f_code))
+
         return json.dumps({
-            'f_code': inspect.getsource(self._f_code),
-            'f_args': self._f_args
+            'f_args': self._f_args,
+            'f_kwargs': self._f_kwargs,
+            'f_code': dilled
         })
 
     # Function:
@@ -110,23 +122,16 @@ class Runnable(object):
     # Returns:
     #    TODO
     @classmethod
-    def from_function(cls, f):
-        #
-        # TODO : find some way to get code from function -- look into how
-        #        cloudpickle does it (https://github.com/cloudpipe/cloudpickle/blob/master/cloudpickle/cloudpickle.py)
-        #
-        return cls("# PLEASE IMPLEMENT")
-
-    # Function:
-    #     TODO
-    # Args:
-    #     TODO
-    # Returns:
-    #    TODO
-    @classmethod
     def unserialize(cls, value):
-        unserialized = json.parse(value)
-        return cls(f_code=unserialized['f_code'])
+        unserialized = json.loads(value)
+        return cls(
+            f_code=dill.loads(base64.b64decode(unserialized['f_code'])),
+            f_args=unserialized['f_args'],
+            f_kwargs=unserialized['f_kwargs']
+        )
+
+    def evaluate(self):
+        return self._f_code(*self._f_args, **self._f_kwargs)
 
 
 # worker sends this back to the nexus
