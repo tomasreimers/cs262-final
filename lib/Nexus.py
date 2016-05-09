@@ -64,7 +64,6 @@ class Nexus(object):
         self._queued_computations = []
         self._dead_callback = dead_callback
 
-<<<<<<< HEAD
     """
     Function:
         Registers a worker to this nexus

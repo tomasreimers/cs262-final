@@ -145,9 +145,5 @@ if __name__ == '__main__':
 	tester.set_up()
 	tester.test_1()
 	tester.test_2()
-<<<<<<< HEAD:unit_tests.py
-	tester.test_3()
-=======
 	tester.test_3()
 	tester.test_4()
->>>>>>> 783e6cdad486fcf7c99c6b3364e1c2fd068f7b0a:nick-master-test.py
