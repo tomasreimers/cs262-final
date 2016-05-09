@@ -59,13 +59,10 @@ class Nexus(object):
     Returns:
         None
     """
-    def __init__(self):
-        #
-        # TODO : what if there are no workers?
-        #
-
+    def __init__(self, dead_callback=None):
         self._workers = []
         self._queued_computations = []
+        self._dead_callback = dead_callback
 
     """
     Function:
@@ -103,10 +100,23 @@ class Nexus(object):
        None
     """
     def unload_work(self):
-        # TODO: needs a lot of error handling. No worker? No job to run?
+        self.all_dead_check()
         for worker in self._workers:
             if worker._state == STATE_READY:
                 self.assign_work_to(worker)
+    """
+    Function:
+        Checks if all the workers are dead
+    Args:
+        None
+    Returns:
+       None
+    """
+    def all_dead_check(self):
+        for worker in self._workers:
+            if worker._state != STATE_DEAD:
+                return 
+        print "[ALL WORKERS DEAD]"
 
     """
     Function:
@@ -259,6 +269,11 @@ class RemoteWorker(object):
                 # Return computation back to nexus' queue
                 if self._running is not None:
                     self._nexus.load_work(self._running)
+
+                # have user handle death
+                self._nexus.all_dead_check()
+                if self._nexus._dead_callback is not None:
+                    self._nexus._dead_callback()
 
                 # end the thread
                 return 1
