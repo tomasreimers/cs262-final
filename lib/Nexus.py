@@ -5,7 +5,7 @@
 # This library allows you to configure one computer to run a python program with
 # the power of multiple computers.
 #
-# On each of the Workers (auxilary computers), run ShardedWorker.py, please ensure
+# On each of the Workers (auxilary computers), run run_worker.py, please ensure
 # the computer is configured with any libraries code that needs to run on it
 # will require. The Nexus (main computer that runs the major file), will dispatch
 # work to the Workers periodically.
@@ -21,17 +21,6 @@
 # The nexus periodically pings workers for a heartbeat, should a worker fail to
 # provide one for N cycles, the nexus will assume the worker has died and
 # dispatch its work to another worker.
-#
-
-#
-# GENERAL NOTES:
-#  - Seems like picloud was trying to do our project (but commercially) in 2013
-#    They've since shut down, but you can read about it here:
-#    https://www.quora.com/Can-lambda-functions-and-other-Python-code-be-
-#    (Comments of first answer about cloud.call)
-#
-#  - https://www.quora.com/Distributed-Systems-How-and-when-is-state-machine-replication-useful-in-practice
-#
 
 import json
 from flask import Flask
@@ -56,20 +45,20 @@ STATE_STRINGS = {
     STATE_COMPLETE: "State complete"
 }
 
-#
-# NOTE: Thanks to the GIL, we can actually ignore what would otherwise be common
-#       sync issues.
-#
-
 class Nexus(object):
     """
     The main machine running computations, this object allows the user to
     queue computations for workers.
     """
 
-    # Function:
-    #     Initialize a Nexus object
-    #
+    """
+    Function:
+        Initialize a Nexus object
+    Args:
+        None
+    Returns:
+        None
+    """
     def __init__(self):
         #
         # TODO : what if there are no workers?
@@ -78,41 +67,56 @@ class Nexus(object):
         self._workers = []
         self._queued_computations = []
 
-    # Function:
-    #     Registers a worker to this nexus
-    # Args:
-    #     addr (string)     : IP address of the worker
-    #     password (string) : password for the worker
-    # Returns:
-    #    None
-    # addr should be ip_address:port (i.e. 10.10.0.1:1234)
+    """
+    Function:
+        Registers a worker to this nexus
+    Args:
+        addr (string)     : IP address of the worker
+        password (string) : password for the worker
+    Returns:
+       None
+
+    addr should be ip_address:port (i.e. 10.10.0.1:1234)
+    """
     def register_worker(self, addr, password):
         new_worker = RemoteWorker(self, addr, password)
         self._workers.append(new_worker)
 
+    """
+    Function:
+        Loads a Computation object into the queue
+    Args:
+        computation (instance) : a Computation object
+    Returns:
+        None
+    """
     def load_work(self, computation):
         self._queued_computations.append(computation)
         self.unload_work()
 
-    # Function:
-    #     Unloads queued Computation objects to remote worker(s)
-    # Args:
-    #     None
-    # Returns:
-    #    None
+    """
+    Function:
+        Unloads queued Computation objects to remote worker(s)
+    Args:
+        None
+    Returns:
+       None
+    """
     def unload_work(self):
         # TODO: needs a lot of error handling. No worker? No job to run?
         for worker in self._workers:
             if worker._state == STATE_READY:
                 self.assign_work_to(worker)
 
-    # Function:
-    #     Assigns a Computation object to a specific worker. Does nothing
-    #     if no queued Computation objects.
-    # Args:
-    #     remote_worker (instance) : remote worker to send computation object to
-    # Returns:
-    #    None
+    """
+    Function:
+        Assigns a Computation object to a specific worker. Does nothing
+        if no queued Computation objects.
+    Args:
+        remote_worker (instance) : remote worker to send computation object to
+    Returns:
+       None
+    """
     def assign_work_to(self, remote_worker):
         if len(self._queued_computations) == 0:
             return
@@ -120,7 +124,15 @@ class Nexus(object):
         # nexus sends Computation objects to workers
         computation = self._queued_computations.pop(0)
         remote_worker.assign_work(computation)
-
+        
+    """
+    Function:
+         Checks if there is still work being done by a worker.
+    Args:
+        None
+    Returns:
+        boolean
+    """
     def all_done(self):
         # check if anything left
         if len(self._queued_computations) > 0:
@@ -132,10 +144,28 @@ class Nexus(object):
                 return False
         return True
 
+    """
+    Function:
+        Do nothing until all workers are done working.
+    Args:
+        None
+    Returns:
+        None
+    """
     def wait(self):
         while not self.all_done():
             time.sleep(WORKER_SLEEP_TIME)
 
+    """
+    Function:
+        Decorator that turns the wrapped function into a promise, begins
+        begins execution and returns the promise.
+    Args:
+        f (function) : The function to wrap
+    Returns:
+        (promise)    : The promise that completes when the worker returns
+
+    """
     def shard(self, f):
         @functools.wraps(f)
         def wrapped(*args):
@@ -150,14 +180,16 @@ class Nexus(object):
 class RemoteWorker(object):
     """The Nexus' interal representation of Workers."""
 
-    # Function:
-    #     Initialize a RemoteWorker object
-    # Args:
-    #     nexus (instance)  : nexus object this worker will "belong" to
-    #     addr  (string)    : web address of the worker
-    #     password (string) : password for the worker
-    # Returns:
-    #    None
+    """
+    Function:
+        Initialize a RemoteWorker object
+    Args:
+        nexus (instance)  : nexus object this worker will "belong" to
+        addr  (string)    : web address of the worker
+        password (string) : password for the worker
+    Returns:
+       None
+    """
     def __init__(self, nexus, addr, password):
         self._state = STATE_READY
         self._running = None
@@ -170,12 +202,14 @@ class RemoteWorker(object):
         self._thread.daemon = True
         self._thread.start()
 
-    # Function:
-    #     Assign work to a remote worker. Currently serializes object using JSON
-    # Args:
-    #     computation (instance) : Computation object
-    # Returns:
-    #    TODO
+    """
+    Function:
+        Assign work to a remote worker. Currently serializes object using JSON
+    Args:
+        computation (instance) : Computation object
+    Returns:
+        int if an exception occurred, otherwise None
+   """
     def assign_work(self, computation):
         assert(self._state == STATE_READY)
 
@@ -194,11 +228,20 @@ class RemoteWorker(object):
             self._state = STATE_DEAD
             return 1
 
+    """
+    Function:
+        Pings workers to see if they're alive - marks them as dead if they're not.
+        If a worker fails, add computation back to the Nexus' queue. If worker has
+        computed a result, gets the result and handles it appropriately.
+    Args:
+        None
+    Returns:
+        None
+    """
     def ping(self):
         while True:
             try:
                 # Hard coded to ping every 3 seconds
-                # TODO: not sure if timeout = 0.1 makes sense
                 res = requests.get(self._addr + "heartbeat", timeout=0.5)
 
             except requests.exceptions.ConnectionError as e:
@@ -211,7 +254,6 @@ class RemoteWorker(object):
                 #       appropriately, we do this in case the nexus would like
                 #       to run any manual cleanup (e.g. spin up another AWS
                 #       box).
-
                 self._state = STATE_DEAD
 
                 # Return computation back to nexus' queue
@@ -229,7 +271,6 @@ class RemoteWorker(object):
             elif worker_response['status_code'] == STATE_COMPLETE:
                 # Otherwise, the worker should be retuning a result from computatoin.
                 # Try to deserialize data
-                # TODO: Definately needs error handling here.
                 print "func. ping log | worker returned a result"
                 returned = Resources.Returned.unserialize(worker_response['result'])
                 self._running.done(returned)
