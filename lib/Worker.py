@@ -45,11 +45,6 @@ class Worker(object):
         if action == "heartbeat":
             # If worker has completed a job, return self.result with this
             # heartbeat. Otherwise, report self.state.
-
-            #
-            # TODO : Need to think more on how state changes after a job is done.
-            # Might be helpful to add STATE_RETURNED.
-            #
             if self.state == STATE_COMPLETE:
                 # reset worker state to ready
                 self.state = STATE_READY
@@ -111,7 +106,8 @@ class Worker(object):
         runnable_string (string) : data to be deserialized
     Returns:
         None
-    TODO:
+
+    Note:
         - This breaks if you pass a function inside of a class
     """
     def do_computation(self, runnable_string):
@@ -140,13 +136,5 @@ class Worker(object):
     def start(self):
         self.state = STATE_READY
 
-        #
-        # TODO: May or may not be necessary to set threaded = True, since the request
-        # handler could just be a single thread
-        #
-
         print "Worker starts"
         self.app.run(threaded = True)
-
-    # http://lybniz2.sourceforge.net/safeeval.html -- consider using this to pass
-    # globals / locals found in f.func_globals
