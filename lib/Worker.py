@@ -73,7 +73,7 @@ class Worker(object):
                 return "Worker busy"
             # Dispatch a new thread with to do computation
             else:
-                print "About to start computation"
+                print "About to start computation", 'Time:', str(time.time())
                 thread.start_new_thread(self.do_computation, (request.data, ))
                 return "Job starts running"
         else:
@@ -94,11 +94,21 @@ class Worker(object):
 
         # unserialize data
         self.state = STATE_RUNNING
-        print "func. do_computation log | Runnable string: ", runnable_string
-        runnable = Resources.Runnable.unserialize(runnable_string)
+
+        # print "func. do_computation log | Runnable string: ", runnable_string
+        print "func. do_computation log | Start running:", 'Time:', str(time.time())
+        f_data = json.loads(runnable_string)
+        f_args = f_data["f_args"]
+        f_code = f_data["f_code"]
+        f_name = f_code.split("\n")[0].split(" ")[1].split("(")[0]
+        # print "func. do_computation log | Got these f_args from the client: ", f_args
+        print "func. do_computation log | Got this f_code from the client: \n", f_code, 'Time:', str(time.time())
+        print "func. do_computation log | Extracted this function name from f_code: ", f_name, 'Time:', str(time.time())
 
         # compute result
-        f_result = runnable.evaluate()
+        exec(f_code)
+        exec("f_result = " + self.create_function_call(f_name, f_args))
+        print "func. do_computation log | Computed result: ", f_result, 'Time:', str(time.time())
 
         # update state
         f_result = Resources.Returned(value=f_result)

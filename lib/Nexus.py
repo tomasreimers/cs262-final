@@ -186,7 +186,7 @@ class RemoteWorker(object):
         print "func. assign_work log | About to assign runnable to worker"
         try:
             # send get request with data
-            print "func. assign_work log | computation._runnable.serialize(): ", computation._runnable.serialize()
+            # print "func. assign_work log | computation._runnable.serialize(): ", computation._runnable.serialize()
             res = requests.get(self._addr + "computation", data=computation._runnable.serialize())
         except requests.exceptions.ConnectionError as e:
             # Encountered issue connecting to worker, log error message and
