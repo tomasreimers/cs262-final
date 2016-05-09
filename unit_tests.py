@@ -133,10 +133,10 @@ class TestRemoteFunctionExecution():
 		print "Running test #4"
 
 		@self.nexus.shard
-		def derp(foo):
+		def add_five(foo):
 			return foo + 5
 
-		derp(10).then(output_of("Derp(10)"))
+		add_five(10).then(output_of("add_five(10)"))
 
 		self.nexus.wait()
 
