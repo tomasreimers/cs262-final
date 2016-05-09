@@ -50,6 +50,10 @@ def factorial(n):
 			to_return *= i
 		return to_return
 
+def output_of(name):
+	def wrapped(result):
+		print name, ":", result._value
+	return wrapped
 
 class TestRemoteFunctionExecution():
 	"""
@@ -117,16 +121,22 @@ class TestRemoteFunctionExecution():
 	def test_3(self):
 		print "Running test #3"
 
-		def output_of(name):
-			def wrapped(result):
-				print name, ":", result._value
-			return wrapped
-
 		sfactorial = self.nexus.shard(factorial)
 
 		sfactorial(4).then(output_of("4!"))
 		sfactorial(5).then(output_of("5!"))
 		sfactorial(6).then(output_of("6!"))
+		sfactorial(100).then(output_of("100!"))
+
+
+	def test_4(self):
+		print "Running test #4"
+
+		@self.nexus.shard
+		def derp(foo):
+			return foo + 5
+
+		derp(10).then(output_of("Derp(10)"))
 
 		self.nexus.wait()
 
@@ -135,4 +145,9 @@ if __name__ == '__main__':
 	tester.set_up()
 	tester.test_1()
 	tester.test_2()
+<<<<<<< HEAD:unit_tests.py
 	tester.test_3()
+=======
+	tester.test_3()
+	tester.test_4()
+>>>>>>> 783e6cdad486fcf7c99c6b3364e1c2fd068f7b0a:nick-master-test.py

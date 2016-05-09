@@ -76,31 +76,6 @@ class Worker(object):
 
     """
     Function:
-        Creates a string function call
-    Args:
-        f_name (string) : name of the function
-        f_args (list)   : arguments for the function call
-    Returns:
-        string
-    """
-    def create_function_call(self, f_name, f_args):
-        f_call = f_name + "("
-        for f_arg in f_args:
-            if isinstance(f_arg, unicode) or isinstance(f_arg, str):
-                if f_call[-1] == "(":
-                    f_call += "'%s'" % (f_arg)
-                else:
-                    f_call += ",'%s'" % (f_arg)
-            else:
-                if f_call[-1] == "(":
-                    f_call += str(f_arg)
-                else:
-                    f_call += "," + str(f_arg)
-        f_call += ")"
-        return f_call
-
-    """
-    Function:
         Wrapper function to run actual computations.
     Args:
         runnable_string (string) : data to be deserialized
@@ -111,21 +86,15 @@ class Worker(object):
         - This breaks if you pass a function inside of a class
     """
     def do_computation(self, runnable_string):
+        assert(self.state == STATE_READY)
+
         # unserialize data
         self.state = STATE_RUNNING
         print "func. do_computation log | Runnable string: ", runnable_string
-        f_data = json.loads(runnable_string)
-        f_args = f_data["f_args"]
-        f_code = f_data["f_code"]
-        f_name = f_code.split("\n")[0].split(" ")[1].split("(")[0]
-        print "func. do_computation log | Got these f_args from the client: ", f_args
-        print "func. do_computation log | Got this f_code from the client: \n", f_code
-        print "func. do_computation log | Extracted this function name from f_code: ", f_name
+        runnable = Resources.Runnable.unserialize(runnable_string)
 
         # compute result
-        exec(f_code)
-        f_result = eval(self.create_function_call(f_name, f_args))
-        print "func. do_computation log | Computed result: ", f_result
+        f_result = runnable.evaluate()
 
         # update state
         f_result = Resources.Returned(value=f_result)

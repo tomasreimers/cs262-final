@@ -64,6 +64,7 @@ class Nexus(object):
         self._queued_computations = []
         self._dead_callback = dead_callback
 
+<<<<<<< HEAD
     """
     Function:
         Registers a worker to this nexus
@@ -75,8 +76,8 @@ class Nexus(object):
 
     addr should be ip_address:port (i.e. 10.10.0.1:1234)
     """
-    def register_worker(self, addr, password):
-        new_worker = RemoteWorker(self, addr, password)
+    def register_worker(self, addr, password, sleep_time=WORKER_SLEEP_TIME):
+        new_worker = RemoteWorker(self, addr, password, sleep_time=sleep_time)
         self._workers.append(new_worker)
 
     """
@@ -178,8 +179,8 @@ class Nexus(object):
     """
     def shard(self, f):
         @functools.wraps(f)
-        def wrapped(*args):
-            runnable = Resources.Runnable(f, args)
+        def wrapped(*args, **kwargs):
+            runnable = Resources.Runnable(f, args, kwargs)
     	    computation = Resources.Computation(runnable)
             self.load_work(computation)
             return computation
@@ -200,12 +201,13 @@ class RemoteWorker(object):
     Returns:
        None
     """
-    def __init__(self, nexus, addr, password):
+    def __init__(self, nexus, addr, password, sleep_time=WORKER_SLEEP_TIME):
         self._state = STATE_READY
         self._running = None
         self._addr = addr
         self._password = password
         self._nexus = nexus
+        self._sleep_time = sleep_time
 
         # Set up self.ping to run every few seconds in a different thread
         self._thread = threading.Thread(target=self.ping)
@@ -298,4 +300,4 @@ class RemoteWorker(object):
                 assert(False, "State code unrecognized")
 
             # sleep before we query again
-            time.sleep(WORKER_SLEEP_TIME)
+            time.sleep(self._sleep_time)
