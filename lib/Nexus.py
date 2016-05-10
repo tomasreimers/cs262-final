@@ -231,7 +231,8 @@ class RemoteWorker(object):
         try:
             # send get request with data
             print "func. assign_work log | computation._runnable.serialize(): ", computation._runnable.serialize()
-            res = requests.get(self._addr + "computation", data=computation._runnable.serialize())
+            res = requests.get(self._addr + "computation", params={"password": self._password}, 
+                data=computation._runnable.serialize())
         except requests.exceptions.ConnectionError as e:
             # Encountered issue connecting to worker, log error message and
             # invalidate this worker
@@ -253,7 +254,7 @@ class RemoteWorker(object):
         while True:
             try:
                 # Hard coded to ping every 3 seconds
-                res = requests.get(self._addr + "heartbeat", timeout=0.5)
+                res = requests.get(self._addr + "heartbeat", params={"password": self._password}, timeout=0.5)
 
             except requests.exceptions.ConnectionError as e:
                 # Encountered issue connecting to worker, log error message,
