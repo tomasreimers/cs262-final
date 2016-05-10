@@ -94,10 +94,13 @@ class Worker(object):
         runnable = Resources.Runnable.unserialize(runnable_string)
 
         # compute result
-        f_result = runnable.evaluate()
+        try:
+            f_result = runnable.evaluate()
+            f_result = Resources.Returned(value=f_result)
+        except Exception as e:
+            f_result = Resources.Returned(value=e, is_exception=True)
 
         # update state
-        f_result = Resources.Returned(value=f_result)
         self.result = f_result.serialize()
         self.state = STATE_COMPLETE
         print "Job complete"

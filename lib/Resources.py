@@ -151,6 +151,21 @@ class Returned(object):
         self._value = value
 
     """
+    Evaluate the returned object (either raise an exception or return the value)
+
+    Args:
+        None
+
+    Returns:
+        The value (or excepts with the exception)
+    """
+    def evaluate(self):
+        if self._is_exception:
+            raise self._value
+        else:
+            return self._value
+
+    """
     Function:
         Serialize the Returned object into a string, currently using json
     Args:
@@ -162,7 +177,7 @@ class Returned(object):
         # TODO : replace with Protobufs, also this will fail is self._value is an exception
         return json.dumps({
             'is_exception': self._is_exception,
-            'value': self._value
+            'value': base64.b64encode(dill.dumps(self._value))
         })
 
     """
@@ -176,4 +191,7 @@ class Returned(object):
     @classmethod
     def unserialize(cls, value):
         unserialized = json.loads(value)
-        return cls(is_exception=unserialized['is_exception'], value=unserialized['value'])
+        return cls(
+            is_exception=unserialized['is_exception'],
+            value=dill.loads(base64.b64decode(unserialized['value']))
+        )

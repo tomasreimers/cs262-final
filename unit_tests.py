@@ -140,6 +140,23 @@ class TestRemoteFunctionExecution():
 
 		self.nexus.wait()
 
+	def test_5(self):
+		print "Running test #5"
+
+		@self.nexus.shard
+		def raise_exception():
+			return 10 / 0
+
+		def check_exception(result):
+			print result._is_exception
+			print result._value
+
+			result.evaluate()
+
+		raise_exception().then(check_exception)
+
+		self.nexus.wait()
+
 if __name__ == '__main__':
 	tester = TestRemoteFunctionExecution()
 	tester.set_up()
@@ -147,3 +164,4 @@ if __name__ == '__main__':
 	tester.test_2()
 	tester.test_3()
 	tester.test_4()
+	tester.test_5()
