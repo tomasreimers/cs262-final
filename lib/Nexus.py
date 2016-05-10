@@ -115,7 +115,7 @@ class Nexus(object):
     def all_dead_check(self):
         for worker in self._workers:
             if worker._state != STATE_DEAD:
-                return 
+                return
         print "[ALL WORKERS DEAD]"
 
     """
@@ -134,7 +134,7 @@ class Nexus(object):
         # nexus sends Computation objects to workers
         computation = self._queued_computations.pop(0)
         remote_worker.assign_work(computation)
-        
+
     """
     Function:
          Checks if there is still work being done by a worker.
@@ -231,7 +231,7 @@ class RemoteWorker(object):
         try:
             # send get request with data
             print "func. assign_work log | computation._runnable.serialize(): ", computation._runnable.serialize()
-            res = requests.get(self._addr + "computation", params={"password": self._password}, 
+            res = requests.get(self._addr + "computation", params={"password": self._password},
                 data=computation._runnable.serialize())
         except requests.exceptions.ConnectionError as e:
             # Encountered issue connecting to worker, log error message and
