@@ -8,6 +8,9 @@ import unittest
 import requests
 import time
 
+print "Please make sure no other workers are currently running on this machine"
+print ""
+
 """
 Function:
     calculate n-factorial
