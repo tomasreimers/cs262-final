@@ -8,9 +8,9 @@ Currently, it is difficult to write a program that uses the power of multiple co
 * unit_test.py
     * Some tests showing how the system functions 
 * run_worker.py
-    * Starts a worker that listens for work to do 
+    * Starts a worker that listens for "work" to do 
 * lib/Nexus.py
-    * Main part of the system that ccepts work from the client, dispatches it to workers, monitors worker state, and hands the client results back as they are returned
+    * Main part of the system that accepts "work" from the client, dispatches it to workers, monitors worker state, and hands the client results back as they are returned
 * lib/Resources.py
     * Defines "work" that a client wants to do and the objects that are sent over-the-wire  
 * lib/Worker.py
