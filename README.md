@@ -16,6 +16,14 @@ Currently, it is difficult to write a program that uses the power of multiple co
 * lib/Worker.py
     * Runs "work" assigned by the Nexus and returns its result to the Nexus
 
+## Requirements
+
+Pip install:
+ * dill
+ * mock
+ * flask
+ * requests
+
 ### Demo
 In one terminal session run:
 
