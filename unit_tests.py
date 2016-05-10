@@ -93,6 +93,7 @@ class TestWorkerStates(unittest.TestCase):
     Wrong password should lead to failed computation (callback should not be called)
     """
     def test_wrong_password(self):
+        print "Running wrong passowrd test"
         # Create a Nexus with wrong password
         dummy_nexus = Nexus.Nexus()
         dummy_nexus.register_worker("http://localhost:5000/", "bar")
@@ -113,6 +114,7 @@ class TestWorkerStates(unittest.TestCase):
     Computation with correct password should run sucessfullly
     """
     def test_correct_password(self):
+        print "Running correct passowrd test"
         sfactorial = self.nexus.shard(factorial)
 
         mock_callback = Mock(return_value=None)
@@ -126,7 +128,7 @@ class TestWorkerStates(unittest.TestCase):
     Valid computation request should return correct result
     """
     def test_valid_computation(self):
-      print "Running test #3"
+      print "Running valid computation test"
 
       sfactorial = self.nexus.shard(factorial)
 
@@ -140,7 +142,7 @@ class TestWorkerStates(unittest.TestCase):
     Should automatically shard a function with decorator
     """
     def test_function_decorator(self):
-        print "Running test #4"
+        print "Running function decorator test"
 
         @self.nexus.shard
         def add_five(foo):
@@ -155,6 +157,7 @@ class TestWorkerStates(unittest.TestCase):
     Computation with error should report exception in Returned
     """
     def test_exception(self):
+        print "Running worker exception test"
         sdivide_zero = self.nexus.shard(divide_zero)
 
         mock_handler = Mock(return_value=None)
@@ -173,6 +176,7 @@ class TestWorkerStates(unittest.TestCase):
     """
     @classmethod
     def tearDownClass(cls):
+        print "Test complete, terminate worker"
         cls.workerProcess.terminate()
         cls.workerProcess.join()
 
