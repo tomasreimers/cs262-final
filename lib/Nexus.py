@@ -280,6 +280,10 @@ class RemoteWorker(object):
                 # end the thread
                 return 1
 
+            if (res.text == "Invalid auth."):
+                raise Exception('Invalid password')
+                # return 1
+
             # If worker is ready or running, heartbeat is okay
             worker_response = json.loads(res.text)
             if worker_response['status_code'] == STATE_READY or worker_response['status_code'] == STATE_RUNNING:

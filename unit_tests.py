@@ -1,167 +1,180 @@
 from lib import Nexus
 from lib import Worker
 from lib import Resources
+from mock import Mock
+from multiprocessing import Process
+
 import unittest
 import requests
 import time
-from multiprocessing import Process
-
-# .then method for nexus
-def print_result(result):
-	print "*** Result of computation: ", result._value
 
 """
 Function:
-	Returns the sum of two integers
+    calculate n-factorial
 Args:
-	a (int) - a number for adding
-	b (int) - a number for adding
+    n (int): number to calculate
 Returns:
-	int
+    int: n-factorial result
 """
-def sum_numbers(a, b):
-	return a + b
-
-"""
-Function:
-	Counts how many times letter ch appears in string s
-Args:
-	s (string) - a string to count occurrences in
-	ch (char)  - a letter to count occurrences of
-Returns:
-	int
-"""
-def count_occurrences(s, ch):
-	count = 0
-	for c in s:
-		if c == ch:
-			count += 1
-	return count
-
 def factorial(n):
-	# error checking
-	if n < 0:
-		return -1
-	elif n == 0:
-		return 1
-	else:
-		to_return = 1
-		for i in xrange(1, n + 1):
-			to_return *= i
-		return to_return
+    # error checking
+    if n < 0:
+        return -1
+    elif n == 0:
+        return 1
+    else:
+        to_return = 1
+        for i in xrange(1, n + 1):
+            to_return *= i
+        return to_return
 
+"""
+Function:
+    Zero division, should raise an exception on the worker
+Args:
+    None
+Returns:
+    None
+"""
+def divide_zero():
+    return 1 / 0
+
+"""
+Function:
+    Wrapper function which returns a callback function. The callback function prints
+    computation result to the console. Mainly used for debugging purpose
+Args:
+    name (String): name of the computation job
+Returns:
+    wrapped (Function): callback function to use with then
+"""
 def output_of(name):
-	def wrapped(result):
-		print name, ":", result._value
-	return wrapped
 
-class TestRemoteFunctionExecution():
-	"""
-	How to run:
-		1) execute python run_worker.py in a terminal window
-		2) execute python nick-master-test.py in another terminal window
-		3) check logs to see if computed result matches expected result
-	"""
+    def wrapped(result):
+        print name, ":", result._value
 
-	def set_up(self):
-		self.nexus = Nexus.Nexus()
-		self.nexus.register_worker("http://localhost:5000/", "")
+    return wrapped
 
-	"""
-	Function call:
-		sum(1,2)
+"""
+Function:
+    Wrapper function which returns a callback function. The callback function checks
+    computation result
+Args:
+    value (Object): expected result of the computation job
+Returns:
+    wrapped (Function): callback function to use with then
+"""
+def expect_result(value):
+    mock_handler = Mock(return_value=None)
 
-	Expected print value:
-		3
-	"""
-	def test_1(self):
-		print "Running test #1"
+    def wrapped(result):
+        mock_handler(result._value)
+        mock_handler.assert_called_once_with(value)
 
-		# prepare computation object being sent to client
-		runnable = Resources.Runnable(sum_numbers, [1,2])
-		computation = Resources.Computation(runnable)
-		computation.then(print_result)
-
-		# send work to a remote machine
-		self.nexus.load_work(computation)
-
-		# wait for result to come back
-		self.nexus.wait()
-
-	"""
-	Function call:
-		count_occurrences("apple apple apple apple", "a")
-	Expected print value:
-		4
-	"""
-	def test_2(self):
-		print "Running test #2"
-
-		# prepare computation object being sent to client
-		runnable = Resources.Runnable(count_occurrences, ["apple apple apple apple", "a"])
-		computation = Resources.Computation(runnable)
-		computation.then(print_result)
-
-		# send work to a remote machine
-		self.nexus.load_work(computation)
-
-		# wait for result to come back
-		self.nexus.wait()
-
-	"""
-	Function call(s):
-		factorial(4)
-		factorial(5)
-		factorial(6)
-	Expected print value:
-		24
-		120
-		720
-	"""
-	def test_3(self):
-		print "Running test #3"
-
-		sfactorial = self.nexus.shard(factorial)
-
-		sfactorial(4).then(output_of("4!"))
-		sfactorial(5).then(output_of("5!"))
-		sfactorial(6).then(output_of("6!"))
-		sfactorial(100).then(output_of("100!"))
+    return wrapped
 
 
-	def test_4(self):
-		print "Running test #4"
+class TestWorkerStates(unittest.TestCase):
+    """
+    Spawn worker process and init nexus
+    """
+    @classmethod
+    def setUpClass(cls):
 
-		@self.nexus.shard
-		def add_five(foo):
-			return foo + 5
+        # Worker password is set to be foo
+        worker = Worker.Worker("foo")
+        cls.workerProcess = Process(target=worker.start, args=())
+        cls.workerProcess.start()
 
-		add_five(10).then(output_of("add_five(10)"))
+        cls.nexus = Nexus.Nexus()
+        cls.nexus.register_worker("http://localhost:5000/", "foo")
 
-		self.nexus.wait()
+    """
+    Wrong password should lead to failed computation (callback should not be called)
+    """
+    def test_wrong_password(self):
+        # Create a Nexus with wrong password
+        dummy_nexus = Nexus.Nexus()
+        dummy_nexus.register_worker("http://localhost:5000/", "bar")
 
-	def test_5(self):
-		print "Running test #5"
+        sfactorial = dummy_nexus.shard(factorial)
 
-		@self.nexus.shard
-		def raise_exception():
-			return 10 / 0
+        mock_callback = Mock(return_value=None)
 
-		def check_exception(result):
-			print result._is_exception
-			print result._value
+        sfactorial(3).then(mock_callback)
 
-			result.evaluate()
+        # Since the computation will not be executed with wrong passowrd,
+        # manually sleep rather than using nexus.sleep
+        time.sleep(2)
 
-		raise_exception().then(check_exception)
+        self.assertFalse(mock_callback.called)
 
-		self.nexus.wait()
+    """
+    Computation with correct password should run sucessfullly
+    """
+    def test_correct_password(self):
+        sfactorial = self.nexus.shard(factorial)
+
+        mock_callback = Mock(return_value=None)
+
+        sfactorial(3).then(mock_callback)
+
+        self.nexus.wait()
+        self.assertTrue(mock_callback.called)
+
+    """
+    Valid computation request should return correct result
+    """
+    def test_valid_computation(self):
+      print "Running test #3"
+
+      sfactorial = self.nexus.shard(factorial)
+
+      sfactorial(4).then(expect_result(24))
+      sfactorial(5).then(expect_result(120))
+      sfactorial(6).then(expect_result(720))
+
+      self.nexus.wait()
+
+    """
+    Should automatically shard a function with decorator
+    """
+    def test_function_decorator(self):
+        print "Running test #4"
+
+        @self.nexus.shard
+        def add_five(foo):
+            return foo + 5
+
+        mock_callback = Mock(return_value=None)
+
+        self.assertFalse(mock_callback.called)
+        self.nexus.wait()
+
+    """
+    Computation with error should report exception in Returned
+    """
+    def test_exception(self):
+        sdivide_zero = self.nexus.shard(divide_zero)
+
+        mock_handler = Mock(return_value=None)
+
+        # Callback to test result is exception
+        def exception_test(result):
+            mock_handler(result._is_exception)
+            mock_handler.assert_called_once_with(True)
+
+        result = sdivide_zero().then(exception_test)
+
+        self.nexus.wait()
+
+    """
+    Kill the worker process
+    """
+    @classmethod
+    def tearDownClass(cls):
+        cls.workerProcess.terminate()
+        cls.workerProcess.join()
 
 if __name__ == '__main__':
-	tester = TestRemoteFunctionExecution()
-	tester.set_up()
-	tester.test_1()
-	tester.test_2()
-	tester.test_3()
-	tester.test_4()
-	tester.test_5()
+    unittest.main()
